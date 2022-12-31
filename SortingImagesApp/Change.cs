@@ -1,0 +1,143 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.IO;
+using System.Timers;
+
+namespace SortingImagesApp
+{
+    public class Change
+    {
+        private string _path;
+        private FileSystemWatcher watcher;
+        private static System.Timers.Timer _timer;
+        private static int elapsedSeconds = 0;
+        private string Path
+        {
+            get { return _path; }
+            set 
+            {
+                if(!Directory.Exists(value))
+                {
+                    string newPath = @"C:\Image Sorting";
+                    Directory.CreateDirectory(newPath);
+                    _path = newPath;
+                } else
+                {
+                    _path = value;
+                }
+            }
+        }
+        public Change(string path)
+        {
+            Path = path;
+            watcher = new FileSystemWatcher(Path);
+            setTimer();
+            start();
+        }
+        private void setTimer()
+        {
+            _timer = new System.Timers.Timer(1000);
+            _timer.Elapsed += (sender, e) => OnTimedEvent(sender, e, Path);
+            _timer.AutoReset= true;
+        }
+
+        private static void OnTimedEvent(object sender, ElapsedEventArgs e, string path)
+        {
+            if(elapsedSeconds == 3)
+            {
+                _timer.Stop();
+                Thread startThread = new Thread(() =>
+                {
+                    SortingCreatedImages(path);
+                });
+                startThread.Start();
+            }
+            elapsedSeconds++;
+        }
+
+        private void start ()
+        {
+            logMessage($"Directory watching started... here: {Path}");
+
+            watcher.NotifyFilter = NotifyFilters.Attributes
+                                 | NotifyFilters.CreationTime
+                                 | NotifyFilters.DirectoryName
+                                 | NotifyFilters.FileName
+                                 | NotifyFilters.LastAccess
+                                 | NotifyFilters.LastWrite
+                                 | NotifyFilters.Security
+                                 | NotifyFilters.Size;
+
+            watcher.Deleted += OnDelete;
+            watcher.Created += OnCreated;
+
+            watcher.Filter = "";
+            watcher.IncludeSubdirectories = false;
+            watcher.EnableRaisingEvents = true;
+        }
+        public static void logMessage(string message)
+        {
+            DateTime now = DateTime.Now;
+            Console.WriteLine($"{now.Year}/{now.Month}/{now.Day} {now.Hour}:{now.Minute}:{now.Second} - {message}");
+        }
+
+        private void OnCreated(object sender, FileSystemEventArgs e)
+        {
+            logMessage($"Created: {e.FullPath}");
+
+            elapsedSeconds = 0;
+            _timer.Start();
+        }
+
+        private void OnDelete(object sender, FileSystemEventArgs e)
+        {
+            logMessage($"Deleted: {e.FullPath}");
+        }
+        private static void SortingCreatedImages(string path)
+        {
+            string[] filenames = Directory.GetFiles(path);
+
+            foreach (string file in filenames)
+            {
+                FileInfo fi = null;
+                try
+                {
+                    fi = new FileInfo(file);
+                }
+                catch (FileNotFoundException e)
+                {
+                    logMessage(e.Message);
+                    continue;
+                }
+
+                string date = fi.LastWriteTime.ToString("yyyy-MM-dd");
+                string newPath = $"{path}\\{date}";
+                if(!Directory.Exists(newPath))
+                {
+                    Directory.CreateDirectory(newPath);
+                }
+
+                try
+                {
+                    string destinationPath = $"{newPath}\\{fi.Name}";
+                    if (File.Exists(destinationPath))
+                    {
+                        File.Delete(destinationPath);
+                    }
+                    File.Move(file, destinationPath);
+                }
+                catch (IOException ex)
+                {
+                    logMessage(ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    logMessage(ex.ToString());
+                }
+            }
+        }
+    }
+}
