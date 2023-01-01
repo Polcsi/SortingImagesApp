@@ -2,6 +2,7 @@
 using System.Threading;
 using System.IO;
 using System.Timers;
+using System.Windows;
 
 namespace SortingImagesApp
 {
@@ -17,14 +18,15 @@ namespace SortingImagesApp
         private string Path
         {
             get { return _path; }
-            set 
+            set
             {
-                if(!Directory.Exists(value))
+                if (!Directory.Exists(value))
                 {
                     string newPath = @"C:\Image Sorting";
                     Directory.CreateDirectory(newPath);
                     _path = newPath;
-                } else
+                }
+                else
                 {
                     _path = value;
                 }
@@ -37,16 +39,22 @@ namespace SortingImagesApp
             setTimer();
             start();
         }
+        public void Stop()
+        {
+            logMessage("Directory watching is stopped.");
+            watcher.Dispose();
+            _timer.Dispose();
+        }
         private void setTimer()
         {
             _timer = new System.Timers.Timer(1000);
             _timer.Elapsed += (sender, e) => OnTimedEvent(sender, e, Path);
-            _timer.AutoReset= true;
+            _timer.AutoReset = true;
         }
 
         private static void OnTimedEvent(object sender, ElapsedEventArgs e, string path)
         {
-            if(elapsedSeconds == waitTimeInSec)
+            if (elapsedSeconds == waitTimeInSec)
             {
                 _timer.Stop();
                 _timer.Close();
@@ -60,7 +68,7 @@ namespace SortingImagesApp
             elapsedSeconds++;
         }
 
-        private void start ()
+        private void start()
         {
             logMessage($"Directory watching started... here: {Path}");
 
@@ -87,14 +95,14 @@ namespace SortingImagesApp
             Console.WriteLine(strToLog);
             try
             {
-                using (StreamWriter writer = new StreamWriter(logFileName, true))
+                using (StreamWriter writer = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "\\" + logFileName, true))
                 {
                     writer.WriteLine(message);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{now.ToString("yyyy/MM/dd HH:mm:ss")} - {ex.Message}");
+                MessageBox.Show($"{now.ToString("yyyy/MM/dd HH:mm:ss")} - {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -132,7 +140,7 @@ namespace SortingImagesApp
 
                 string date = fi.LastWriteTime.ToString("yyyy-MM-dd");
                 string newPath = $"{path}\\{date}";
-                if(!Directory.Exists(newPath))
+                if (!Directory.Exists(newPath))
                 {
                     Directory.CreateDirectory(newPath);
                 }
