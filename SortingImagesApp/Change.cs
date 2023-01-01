@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.IO;
 using System.Timers;
@@ -13,7 +10,9 @@ namespace SortingImagesApp
         private string _path;
         private FileSystemWatcher watcher;
         private static System.Timers.Timer _timer;
-        private static int elapsedSeconds = 0;
+        private static int elapsedSeconds = 1;
+        private static readonly int elapsedMinimumSec = 1;
+        private static readonly int waitTimeInSec = 5;
         private string Path
         {
             get { return _path; }
@@ -46,15 +45,17 @@ namespace SortingImagesApp
 
         private static void OnTimedEvent(object sender, ElapsedEventArgs e, string path)
         {
-            if(elapsedSeconds == 3)
+            if(elapsedSeconds == waitTimeInSec)
             {
                 _timer.Stop();
+                _timer.Close();
                 Thread startThread = new Thread(() =>
                 {
                     SortingCreatedImages(path);
                 });
                 startThread.Start();
             }
+            logMessage($"{elapsedSeconds}");
             elapsedSeconds++;
         }
 
@@ -81,20 +82,23 @@ namespace SortingImagesApp
         public static void logMessage(string message)
         {
             DateTime now = DateTime.Now;
-            Console.WriteLine($"{now.Year}/{now.Month}/{now.Day} {now.Hour}:{now.Minute}:{now.Second} - {message}");
+            Console.WriteLine($"{now.ToString("yyyy/MM/dd HH:mm:ss")} - {message}");
         }
 
         private void OnCreated(object sender, FileSystemEventArgs e)
         {
             logMessage($"Created: {e.FullPath}");
 
-            elapsedSeconds = 0;
+            elapsedSeconds = elapsedMinimumSec;
             _timer.Start();
         }
 
         private void OnDelete(object sender, FileSystemEventArgs e)
         {
+            _timer.Stop();
             logMessage($"Deleted: {e.FullPath}");
+            elapsedSeconds = elapsedMinimumSec;
+            _timer.Start();
         }
         private static void SortingCreatedImages(string path)
         {
