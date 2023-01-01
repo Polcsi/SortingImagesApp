@@ -3,6 +3,8 @@ using System.Threading;
 using System.IO;
 using System.Timers;
 using System.Windows;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace SortingImagesApp
 {
@@ -97,7 +99,7 @@ namespace SortingImagesApp
             {
                 using (StreamWriter writer = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "\\" + logFileName, true))
                 {
-                    writer.WriteLine(message);
+                    writer.WriteLine(strToLog);
                 }
             }
             catch (Exception ex)
@@ -123,7 +125,8 @@ namespace SortingImagesApp
         }
         private static void SortingCreatedImages(string path)
         {
-            string[] filenames = Directory.GetFiles(path);
+            string supportedExtensions = "*.jpg,*.gif,*.png,*.bmp,*.jpe,*.jpeg,*.tiff,*.psd,*.pdf,*.eps,*.ai,*.raw,*.ico,*.svg,*.webp,*.mp3,*.mp4,*.m4p,*.m4v,*.mov,*.mkv,*.avim,*.mpg,*.mpeg,*.m4v,*.wmv,*.doc,*.docm,*.docx,*.dot,*.dotm,*dotx,*.rtf,*.txt,*.wps,*.xml,*.csv,*.dpf,*.dif,*.html,*.xla,*.xlam,*.xls,*.xlsb,*.xlsm,*.xlsx,*.xlt,*.xltm,*.xltx,*.xps,*.bmp,*.emf,*.odp,*.pot,*.potm,*.potx,*.ppa,*.ppam,*.pps,*.ppsm,*.ppsx,*.ppt,*.pptm,*.pptx,*.thmx,*.wmf,*.xps,*.zip,*.rar,*.exe,*.msi,*.css,*.js";
+            IEnumerable<string> filenames = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly).Where(s => supportedExtensions.Contains(System.IO.Path.GetExtension(s)));
 
             foreach (string file in filenames)
             {
