@@ -13,6 +13,7 @@ namespace SortingImagesApp
         private static int elapsedSeconds = 1;
         private static readonly int elapsedMinimumSec = 1;
         private static readonly int waitTimeInSec = 5;
+        private static readonly string logFileName = "log.txt";
         private string Path
         {
             get { return _path; }
@@ -82,7 +83,19 @@ namespace SortingImagesApp
         public static void logMessage(string message)
         {
             DateTime now = DateTime.Now;
-            Console.WriteLine($"{now.ToString("yyyy/MM/dd HH:mm:ss")} - {message}");
+            string strToLog = $"{now.ToString("yyyy/MM/dd HH:mm:ss")} - {message}";
+            Console.WriteLine(strToLog);
+            try
+            {
+                using (StreamWriter writer = new StreamWriter(logFileName, true))
+                {
+                    writer.WriteLine(message);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{now.ToString("yyyy/MM/dd HH:mm:ss")} - {ex.Message}");
+            }
         }
 
         private void OnCreated(object sender, FileSystemEventArgs e)
