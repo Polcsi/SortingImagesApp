@@ -104,15 +104,22 @@ namespace SortingImagesApp
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"{now.ToString("yyyy/MM/dd HH:mm:ss")} - {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Console.WriteLine($"{now.ToString("yyyy/MM/dd HH:mm:ss")} - {ex.Message}");
             }
         }
 
         private void OnCreated(object sender, FileSystemEventArgs e)
         {
+            elapsedSeconds = elapsedMinimumSec;
+            _timer.Stop();
             logMessage($"Created: {e.FullPath}");
 
             elapsedSeconds = elapsedMinimumSec;
+            FileInfo fileInfo = new FileInfo(e.FullPath);
+            while(IsFileLocked(fileInfo))
+            {
+                Thread.Sleep(500);
+            }
             _timer.Start();
         }
 
@@ -166,6 +173,35 @@ namespace SortingImagesApp
                     logMessage(ex.ToString());
                 }
             }
+        }
+        static bool IsFileLocked(FileInfo file)
+        {
+            FileStream stream = null;
+            try
+            {
+                stream = file.Open(FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (IOException)
+            {
+                //the file is unavailable because it is:
+                //still being written to
+                //or being processed by another thread
+                //or does not exist (has already been processed)
+                return true;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                /*return true;*/
+                logMessage(ex.Message);
+            }
+            finally
+            {
+                if(stream != null)
+                {
+                    stream.Close();
+                }
+            }
+            return false;
         }
     }
 }
