@@ -84,8 +84,7 @@ namespace SortingImagesApp
             logMessage($"{elapsedSeconds}");
             elapsedSeconds++;
         }
-
-        private void Start()
+        public void Start()
         {
             logMessage($"Directory watching started... here: {Path}");
 
@@ -122,7 +121,6 @@ namespace SortingImagesApp
                 Console.WriteLine($"{now.ToString("yyyy/MM/dd HH:mm:ss")} - {ex.Message}");
             }
         }
-
         private void OnCreated(object sender, FileSystemEventArgs e)
         {
             elapsedSeconds = elapsedMinimumSec;
@@ -137,7 +135,6 @@ namespace SortingImagesApp
             }
             _timer.Start();
         }
-
         private void OnDelete(object sender, FileSystemEventArgs e)
         {
             _timer.Stop();
