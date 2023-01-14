@@ -10,7 +10,7 @@ namespace SortingImagesApp
     {
         static void Main(string[] args)
         {
-            Change change = new Change(@"F:\WATCH");
+            Change change = new Change();
             Console.ReadKey();
         }
     }

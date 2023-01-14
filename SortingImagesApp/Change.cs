@@ -2,21 +2,26 @@
 using System.Threading;
 using System.IO;
 using System.Timers;
-using System.Windows;
 using System.Linq;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace SortingImagesApp
 {
     public class Change
     {
-        private string _path;
+        public Settings Settings { get; private set; }
         private FileSystemWatcher watcher;
         private static System.Timers.Timer _timer;
         private static int elapsedSeconds = 1;
         private static readonly int elapsedMinimumSec = 1;
         private static readonly int waitTimeInSec = 5;
-        private static readonly string logFileName = "log.txt";
+        private static string logFileName;
+        private readonly string defaultPath;
+        private readonly string selectedPath;
+        private readonly bool includeSubdirectories;
+        private static string[] supportedExtensions;
+        private string _path;
         private string Path
         {
             get { return _path; }
@@ -24,9 +29,8 @@ namespace SortingImagesApp
             {
                 if (!Directory.Exists(value))
                 {
-                    string newPath = @"C:\Image Sorting";
-                    Directory.CreateDirectory(newPath);
-                    _path = newPath;
+                    Directory.CreateDirectory(defaultPath);
+                    _path = defaultPath;
                 }
                 else
                 {
@@ -34,12 +38,23 @@ namespace SortingImagesApp
                 }
             }
         }
-        public Change(string path)
+        public Change()
         {
-            Path = path;
+            Settings = LoadJson("settings.json");
+            selectedPath = Settings.selectedPath;
+            defaultPath = Settings.defaultPath;
+            logFileName = Settings.logFileName;
+            includeSubdirectories = Settings.includeSubdirectories;
+            supportedExtensions = Settings.supportedExtensions;
+            for (int i = 0; i < supportedExtensions.Length; ++i)
+            {
+                supportedExtensions[i] = $"*{supportedExtensions[i]}";
+            }
+
+            Path = selectedPath;
             watcher = new FileSystemWatcher(Path);
             setTimer();
-            start();
+            Start();
         }
         public void Stop()
         {
@@ -70,7 +85,7 @@ namespace SortingImagesApp
             elapsedSeconds++;
         }
 
-        private void start()
+        private void Start()
         {
             logMessage($"Directory watching started... here: {Path}");
 
@@ -87,7 +102,7 @@ namespace SortingImagesApp
             watcher.Created += OnCreated;
 
             watcher.Filter = "";
-            watcher.IncludeSubdirectories = false;
+            watcher.IncludeSubdirectories = includeSubdirectories;
             watcher.EnableRaisingEvents = true;
         }
         public static void logMessage(string message)
@@ -132,8 +147,13 @@ namespace SortingImagesApp
         }
         private static void SortingCreatedImages(string path)
         {
-            string supportedExtensions = "*.jpg,*.gif,*.png,*.bmp,*.jpe,*.jpeg,*.tiff,*.psd,*.pdf,*.eps,*.ai,*.raw,*.ico,*.svg,*.webp,*.mp3,*.mp4,*.m4p,*.m4v,*.mov,*.mkv,*.avim,*.mpg,*.mpeg,*.m4v,*.wmv,*.doc,*.docm,*.docx,*.dot,*.dotm,*dotx,*.rtf,*.txt,*.wps,*.xml,*.csv,*.dpf,*.dif,*.html,*.xla,*.xlam,*.xls,*.xlsb,*.xlsm,*.xlsx,*.xlt,*.xltm,*.xltx,*.xps,*.bmp,*.emf,*.odp,*.pot,*.potm,*.potx,*.ppa,*.ppam,*.pps,*.ppsm,*.ppsx,*.ppt,*.pptm,*.pptx,*.thmx,*.wmf,*.xps,*.zip,*.rar,*.exe,*.msi,*.css,*.js";
-            IEnumerable<string> filenames = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly).Where(s => supportedExtensions.Contains(System.IO.Path.GetExtension(s)));
+            string extensionsString = "";
+            foreach (string ext in supportedExtensions)
+            {
+                extensionsString += $"{ext},";
+            }
+            extensionsString = extensionsString.Substring(0, extensionsString.Length - 1);
+            IEnumerable<string> filenames = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly).Where(s => extensionsString.Contains(System.IO.Path.GetExtension(s)));
 
             foreach (string file in filenames)
             {
@@ -202,6 +222,17 @@ namespace SortingImagesApp
                 }
             }
             return false;
+        }
+        private Settings LoadJson(string path)
+        {
+            List<Settings> settings = new List<Settings>();
+            using (StreamReader reader = new StreamReader(path))
+            {
+                string json = reader.ReadToEnd();
+                settings = JsonConvert.DeserializeObject<List<Settings>>(json);
+            }
+
+            return settings[0];
         }
     }
 }
