@@ -40,7 +40,7 @@ namespace SortingImagesApp
         }
         public Change()
         {
-            Settings = LoadJson("settings.json");
+            Settings = LoadJson(AppDomain.CurrentDomain.BaseDirectory + "\\" + "settings.json");
             selectedPath = Settings.selectedPath;
             defaultPath = Settings.defaultPath;
             logFileName = Settings.logFileName;
@@ -55,6 +55,26 @@ namespace SortingImagesApp
             watcher = new FileSystemWatcher(Path);
             setTimer();
             Start();
+        }
+        public void Start()
+        {
+            logMessage($"Directory watching started... here: {Path}");
+
+            watcher.NotifyFilter = NotifyFilters.Attributes
+                                 | NotifyFilters.CreationTime
+                                 | NotifyFilters.DirectoryName
+                                 | NotifyFilters.FileName
+                                 | NotifyFilters.LastAccess
+                                 | NotifyFilters.LastWrite
+                                 | NotifyFilters.Security
+                                 | NotifyFilters.Size;
+
+            watcher.Deleted += OnDelete;
+            watcher.Created += OnCreated;
+
+            watcher.Filter = "";
+            watcher.IncludeSubdirectories = includeSubdirectories;
+            watcher.EnableRaisingEvents = true;
         }
         public void Stop()
         {
@@ -83,26 +103,6 @@ namespace SortingImagesApp
             }
             logMessage($"{elapsedSeconds}");
             elapsedSeconds++;
-        }
-        public void Start()
-        {
-            logMessage($"Directory watching started... here: {Path}");
-
-            watcher.NotifyFilter = NotifyFilters.Attributes
-                                 | NotifyFilters.CreationTime
-                                 | NotifyFilters.DirectoryName
-                                 | NotifyFilters.FileName
-                                 | NotifyFilters.LastAccess
-                                 | NotifyFilters.LastWrite
-                                 | NotifyFilters.Security
-                                 | NotifyFilters.Size;
-
-            watcher.Deleted += OnDelete;
-            watcher.Created += OnCreated;
-
-            watcher.Filter = "";
-            watcher.IncludeSubdirectories = includeSubdirectories;
-            watcher.EnableRaisingEvents = true;
         }
         public static void logMessage(string message)
         {
